@@ -1,0 +1,335 @@
+/* 1. 全域變數與基礎設定 */
+:root {
+  --bg: #0d131f; 
+  --bg2: #131b2e;
+  --accent: #7eb8d4;
+  --accent2: #a78bca;
+  --text: #d8dfe8;
+  --text-dim: #6b7a8d;
+  --text-bright: #eef2f7;
+  --line: rgba(126,184,212,0.12);
+  --glow: rgba(126,184,212,0.08);
+  --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Serif TC', serif;
+  font-weight: 300;
+  line-height: 1.9;
+  cursor: none; 
+  overflow-x: hidden;
+}
+
+.wrap {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* 2. 特效元素 (游標、畫布、分隔線) */
+.cursor {
+  position: fixed;
+  width: 8px; height: 8px;
+  background: var(--text-bright);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: difference;
+  transition: width 0.3s ease, height 0.3s ease, background 0.3s ease;
+}
+
+.cursor-glow {
+  position: fixed;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(126,184,212,0.05) 0%, transparent 70%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+body.hover-active .cursor {
+  width: 48px; height: 48px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  mix-blend-mode: normal;
+}
+
+body.hover-active .cursor-glow {
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(167,139,202,0.08) 0%, transparent 70%);
+}
+
+#snow {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin: 2rem 0;
+  color: var(--text-dim);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.25em;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* 3. 開場與主視覺 (Intro & Hero) */
+.intro {
+  min-height: 100vh;
+  background: #05070a;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+}
+
+.intro-text p {
+  margin-bottom: 2rem;
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+  letter-spacing: 0.1em;
+  min-height: 1.5em; 
+}
+
+.segment {
+  opacity: 0;
+  transform: translateY(6px); 
+  transition: opacity 2.5s ease-out, transform 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-block;
+}
+
+.segment.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.intro-hint {
+  margin-top: 4rem; 
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 3s ease;
+  text-align: center;
+}
+
+.intro-hint.visible {
+  opacity: 0.7;
+  animation: hintGlow 4s ease-in-out infinite alternate;
+}
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 6rem 0;
+  position: relative;
+}
+
+.hero-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.38em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  opacity: 0;
+  filter: blur(5px);
+}
+
+.hero-title {
+  font-family: 'Noto Serif TC', serif;
+  font-size: clamp(3.8rem, 11vw, 7.5rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--text-bright);
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(15px);
+}
+
+.hero-title .slash {
+  color: var(--accent2);
+  font-style: italic;
+  display: inline-block;
+}
+
+.hero.visible .hero-label { animation: systemBoot 1s ease-out forwards; }
+.hero.visible .hero-title {
+  animation: titleAwake 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards,
+             titleBreathe 5s ease-in-out 2s infinite alternate;
+}
+
+/* 4. 展覽說明與作品內容 (About & Games) */
+.about {
+  padding: 10rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 2.5rem;
+}
+
+.about-text {
+  font-size: clamp(0.95rem, 2vw, 1.05rem);
+  color: var(--text);
+  max-width: 600px;
+  line-height: 2.3;
+}
+
+.about-text p {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: var(--transition);
+}
+
+.about-text p.visible { opacity: 1; transform: translateY(0); }
+.about-text p + p { margin-top: 1.6rem; }
+
+.games { padding: 4rem 0 10rem; }
+.game {
+  margin-bottom: 11rem;
+  opacity: 0;
+  transform: translateY(45px);
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.game.visible { opacity: 1; transform: translateY(0); }
+.game-header { display: flex; align-items: baseline; gap: 1.4rem; margin-bottom: 2rem; }
+.game-num { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.2em; color: var(--accent2); }
+.game-tag { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.15em; color: var(--text-dim); text-transform: uppercase; }
+
+.game-img {
+  width: 100%; aspect-ratio: 16/9;
+  background: linear-gradient(135deg, #121c2d 0%, #17263d 60%, #0d131f 100%);
+  border: 1px solid var(--line);
+  margin-bottom: 2.5rem;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden; cursor: pointer; transition: var(--transition);
+}
+
+.game-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  position: absolute; inset: 0; z-index: 0; opacity: 0; pointer-events: none; 
+  transition: opacity 1.5s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+.game-img img.loaded { opacity: 0.8; }
+.game-img-label { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.25em; color: var(--text-dim); text-transform: uppercase; z-index: 1; opacity: 0.5; transition: var(--transition), opacity 0.5s ease; }
+.game:not(:has(.is-active)):hover .game-img-label { color: var(--accent); opacity: 0.9; transform: scale(1.03); }
+.game-img.is-active .game-img-label { opacity: 0 !important; pointer-events: none; }
+
+.game-img::before {
+  content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(126,184,212,0.02) 4px, rgba(126,184,212,0.02) 5px);
+}
+
+.game:hover .game-img { border-color: rgba(126,184,212,0.3); box-shadow: 0 15px 40px rgba(13, 19, 31, 0.5), 0 0 20px rgba(126,184,212,0.05); }
+.game-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.2rem, 5vw, 3rem); font-weight: 300; color: var(--text-bright); margin-bottom: 0.3rem; letter-spacing: -0.01em; }
+.game-meta { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); letter-spacing: 0.08em; margin-bottom: 2rem; }
+
+.game-core {
+  font-family: 'Noto Serif TC', serif; font-size: clamp(1.05rem, 2.5vw, 1.2rem); font-style: italic; color: var(--text-bright); line-height: 1.8; margin-bottom: 2rem; padding: 0 0 0 1.4rem;
+  border-left: 2px solid var(--accent2);
+}
+
+.game-body { font-size: clamp(0.9rem, 1.9vw, 1rem); color: var(--text); line-height: 2.2; max-width: 580px; margin-bottom: 2.5rem; }
+.game-body p + p { margin-top: 1.2rem; }
+
+.game-question {
+  font-family: 'Noto Serif TC', serif; font-size: clamp(0.95rem, 2.4vw, 1.1rem); color: var(--accent); font-style: italic; padding: 1.2rem 1.6rem;
+  border: 1px solid rgba(126,184,212,0.15); display: inline-block; position: relative; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  background: linear-gradient(to right, rgba(126,184,212,0.15) 50%, transparent 50%) right bottom / 200% 100%;
+}
+
+.game-question::before { content: '╱'; position: absolute; left: -8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--accent2); opacity: 0.7; }
+.game:hover .game-question { transform: translateY(-2px) scale(1.02); border-color: rgba(126,184,212,0.4); background-position: left bottom; }
+
+/* 5. 解碼與回音尾聲 (Ending & Echo) */
+.ending { padding: 10rem 0; border-top: 1px solid var(--line); text-align: center; }
+.ending-text-container { max-width: 560px; margin: 0 auto 4rem; display: flex; flex-direction: column; gap: 1.4rem; }
+.ending-line-wrapper { position: relative; display: inline-block; margin: 0 auto; }
+.ending-text-line { font-family: 'Noto Serif TC', serif; font-size: clamp(1.15rem, 3.2vw, 1.45rem); font-style: italic; line-height: 1.8; color: var(--text-dim); opacity: 0; transform: translateY(4px); transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+
+.ending-particle-mask {
+  position: absolute; inset: -4px -16px; border: 1px solid rgba(126,184,212,0.2); border-radius: 2px; cursor: pointer; opacity: 1; transform: scale(1); transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s;
+  background: repeating-linear-gradient(90deg, rgba(126,184,212,0.15), rgba(126,184,212,0.15) 4px, rgba(167,139,202,0.2) 6px, rgba(167,139,202,0.2) 12px);
+  box-shadow: 0 0 12px rgba(126,184,212,0.1), inset 0 0 8px rgba(167,139,202,0.1);
+}
+
+.ending-particle-mask::after { content: '╱ ╱  DECODE SIGNAL  ╱ ╱'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.2em; color: var(--accent); text-shadow: 0 0 4px rgba(126,184,212,0.4); opacity: 0.8; }
+.ending-particle-mask:hover {
+  filter: brightness(1.2); transform: scale(1.02);
+  background: repeating-linear-gradient(90deg, rgba(126,184,212,0.2), rgba(126,184,212,0.2) 4px, rgba(167,139,202,0.3) 6px, rgba(167,139,202,0.3) 12px);
+}
+
+.ending-line-wrapper.decoded .ending-text-line { opacity: 1; transform: translateY(0); }
+.ending-line-wrapper.decoded .ending-particle-mask { opacity: 0; pointer-events: none; transform: scaleX(1.1) scaleY(1.3); }
+
+.echo { padding: 15rem 0 25rem; text-align: center; }
+.echo-text { font-size: 14px; letter-spacing: 0.2em; color: var(--text-bright); line-height: 4.5; opacity: 0; }
+.echo.visible .echo-text { animation: echoInitialBoot 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards, echoGlowBreathe 5s ease-in-out 2.5s infinite alternate; }
+
+footer { text-align: center; padding: 0 0 6rem; position: relative; z-index: 2; }
+.footer-copy { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); letter-spacing: 0.15em; }
+
+/* 6. 強調色與打字機樣式 */
+.em-blue { color: var(--accent); text-shadow: 0 0 10px rgba(126, 184, 212, 0.4); font-weight: 400; }
+.em-purple { color: var(--accent2); text-shadow: 0 0 12px rgba(167, 139, 202, 0.4); font-weight: 400; }
+.em-white {
+  color: var(--text-bright);
+  font-weight: 400;
+  text-shadow: 0 0 12px rgba(238, 242, 247, 0.4);
+}
+
+.typewriter-active::after { content: '|'; animation: blink 0.8s infinite; margin-left: 2px; color: var(--text-bright); text-shadow: 0 0 10px rgba(238, 242, 247, 0.4); }
+.typewriter-active.cursor-blue::after { color: var(--accent); text-shadow: 0 0 10px rgba(126, 184, 212, 0.6); }
+
+/* 7. 動態美學關鍵影格 (Keyframes) */
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes hintGlow { 0% { text-shadow: 0 0 0px transparent; } 100% { text-shadow: 0 0 10px var(--accent); color: var(--text-bright); } }
+@keyframes systemBoot { 0%, 35% { opacity: 0; filter: blur(6px); } 32% { opacity: 0.6; filter: blur(2px); } 45% { opacity: 0.9; filter: blur(0); text-shadow: 0 0 10px rgba(126, 184, 212, 0.5); } 50% { opacity: 0.7; } 100% { opacity: 1; filter: blur(0); } }
+@keyframes titleAwake { 0% { opacity: 0; filter: blur(15px); transform: translateY(15px); } 40% { opacity: 0.2; filter: blur(10px); } 43% { opacity: 0.05; } 55% { opacity: 0.8; filter: blur(3px); text-shadow: 0 0 15px rgba(167, 139, 202, 0.6); } 60% { opacity: 0.5; } 100% { opacity: 1; filter: blur(0); transform: translateY(0); } }
+@keyframes titleBreathe { 0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(238, 242, 247, 0.55), 0 0 22px rgba(126, 184, 212, 0.4), 0 0 45px rgba(126, 184, 212, 0.15); } 50% { opacity: 0.5; text-shadow: 0 0 5px rgba(238, 242, 247, 0.3), 0 0 12px rgba(126, 184, 212, 0.2), 0 0 25px rgba(126, 184, 212, 0.05); } }
+@keyframes echoInitialBoot { 0% { opacity: 0; filter: blur(3px); } 15%, 25%, 45% { opacity: 0.1; } 20% { opacity: 0.65; filter: blur(0px); text-shadow: 0 0 8px rgba(238,242,247,0.4); } 40% { opacity: 0.7; } 58% { opacity: 0.65; } 100% { opacity: 0.8; filter: drop-shadow(0 0 8px rgba(126,184,212,0.4)); text-shadow: 0 0 4px rgba(238,242,247,0.8), 0 0 12px rgba(126,184,212,0.5), 0 0 25px rgba(126,184,212,0.3); } }
+@keyframes echoGlowBreathe { 0%, 100% { opacity: 0.55; text-shadow: 0 0 6px rgba(238, 242, 247, 0.25), 0 0 15px rgba(126, 184, 212, 0.1); } 50% { opacity: 0.75; text-shadow: 0 0 14px rgba(238, 242, 247, 0.55), 0 0 30px rgba(126, 184, 212, 0.25); } }
+
+/* 8. 響應式佈局 (Media Queries) */
+@media (max-width: 600px) {
+  .wrap { padding: 0 1.5rem; }
+  .game { margin-bottom: 7rem; }
+  .ending-particle-mask::after { font-size: 12px; letter-spacing: 0.1em; content: '╱ DECODE ╱'; }
+}
