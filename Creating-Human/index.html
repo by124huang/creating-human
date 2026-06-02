@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>人造／造人</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght=300;400;500&family=Cormorant+Garamond:ital,wght=0,300;0,400;1,300;1,400&family=DM+Mono:wght=300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d131f; 
+      --bg2: #131b2e;
+      --accent: #7eb8d4;
+      --accent2: #a78bca;
+      --text: #d8dfe8;
+      --text-dim: #6b7a8d;
+      --text-bright: #eef2f7;
+      --line: rgba(126,184,212,0.12);
+      --glow: rgba(126,184,212,0.08);
+      --transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* 冰藍色強調（對應：自私、重新創造、束縛、指令） */
+    .em-blue {
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(126, 184, 212, 0.4);
+      font-weight: 400;
+    }
+
+    /* 粉紫色強調（對應：愛、無法放下） */
+    .em-purple {
+      color: var(--accent2);
+      text-shadow: 0 0 12px rgba(167, 139, 202, 0.4);
+      font-weight: 400;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 300;
+      line-height: 1.9;
+      cursor: none; 
+      overflow-x: hidden;
+    }
+
+    /* 自訂游標樣式 */
+    .cursor {
+      position: fixed;
+      width: 8px; height: 8px;
+      background: var(--text-bright);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: difference;
+      transition: width 0.3s ease, height 0.3s ease, background 0.3s ease;
+    }
+    .cursor-glow {
+      position: fixed;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(126,184,212,0.05) 0%, transparent 70%);
+      transition: width 0.3s ease, height 0.3s ease;
+    }
+    
+    body.hover-active .cursor {
+      width: 48px;
+      height: 48px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      mix-blend-mode: normal;
+    }
+    body.hover-active .cursor-glow {
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(167,139,202,0.08) 0%, transparent 70%);
+    }
+
+    #snow {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 2;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* 頂端開場 */
+    .intro {
+      min-height: 100vh;
+      background: #05070a;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .intro-text p {
+      margin-bottom: 2rem;
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
+      letter-spacing: 0.1em;
+      min-height: 1.5em; 
+    }
+
+    /* 文字片段基礎樣式 */
+    .segment {
+      opacity: 0;
+      transform: translateY(6px); 
+      transition: opacity 2.5s ease-out, transform 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-block;
+    }
+    .segment.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 第四行打字機動態游標 - 預設常規白色 */
+    .typewriter-active::after {
+      content: '|';
+      animation: blink 0.8s infinite;
+      margin-left: 2px;
+      color: var(--text-bright);
+      text-shadow: 0 0 10px rgba(238, 242, 247, 0.4); 
+    }
+
+    /* 當打到「指令」時，游標變為冰藍色 */
+    .typewriter-active.cursor-blue::after {
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(126, 184, 212, 0.6); 
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* 滑動提示 */
+    .intro-hint {
+      margin-top: 4rem; 
+      font-size: 12px;
+      letter-spacing: 0.3em;
+      color: var(--text-dim);
+      opacity: 0;
+      transition: opacity 3s ease;
+      text-align: center;
+    }
+    .intro-hint.visible {
+      opacity: 0.7;
+      animation: hintGlow 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes hintGlow {
+      0% { text-shadow: 0 0 0px transparent; }
+      100% { text-shadow: 0 0 10px var(--accent); color: var(--text-bright); }
+    }
+
+    /* HERO 區塊配置 */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 6rem 0;
+      position: relative;
+    }
+
+    .hero-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.38em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      opacity: 0;
+      filter: blur(5px);
+    }
+
+    .hero-title {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(3.8rem, 11vw, 7.5rem);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      color: var(--text-bright);
+      opacity: 0;
+      filter: blur(10px);
+      transform: translateY(15px);
+    }
+
+    .hero-title .slash {
+      color: var(--accent2);
+      font-style: italic;
+      display: inline-block;
+    }
+
+    /* HERO 滾動觸發 */
+    .hero.visible .hero-label {
+      animation: systemBoot 1s ease-out forwards;
+    }
+
+    .hero.visible .hero-title {
+      animation: titleAwake 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards,
+                 titleBreathe 5s ease-in-out 2s infinite alternate;
+    }
+
+    @keyframes systemBoot {
+      0% { opacity: 0; filter: blur(6px); }
+      30% { opacity: 0.1; filter: blur(4px); }
+      32% { opacity: 0.6; filter: blur(2px); }
+      35% { opacity: 0.1; }
+      45% { opacity: 0.9; filter: blur(0); text-shadow: 0 0 10px rgba(126, 184, 212, 0.5); }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; filter: blur(0); }
+    }
+
+    @keyframes titleAwake {
+      0% { opacity: 0; filter: blur(15px); transform: translateY(15px); }
+      40% { opacity: 0.2; filter: blur(10px); }
+      43% { opacity: 0.05; }
+      55% { opacity: 0.8; filter: blur(3px); text-shadow: 0 0 15px rgba(167, 139, 202, 0.6); }
+      60% { opacity: 0.5; }
+      100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+    }
+
+    @keyframes titleBreathe {
+      0%, 100% {
+        opacity: 1;
+        text-shadow: 
+          0 0 8px rgba(238, 242, 247, 0.55),
+          0 0 22px rgba(126, 184, 212, 0.4),
+          0 0 45px rgba(126, 184, 212, 0.15);
+      }
+      50% {
+        opacity: 0.5;
+        text-shadow: 
+          0 0 5px rgba(238, 242, 247, 0.3), 
+          0 0 12px rgba(126, 184, 212, 0.2),
+          0 0 25px rgba(126, 184, 212, 0.05);
+      }
+    }
+
+    /* ABOUT */
+    .about {
+      padding: 10rem 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 2.5rem;
+    }
+
+    .about-text {
+      font-size: clamp(0.95rem, 2vw, 1.05rem);
+      color: var(--text);
+      max-width: 600px;
+      line-height: 2.3;
+    }
+    .about-text p {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: var(--transition);
+    }
+    .about-text p.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .about-text p + p { margin-top: 1.6rem; }
+
+    /* DIVIDER */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin: 2rem 0;
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.25em;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    /* GAMES */
+    .games { padding: 4rem 0 10rem; }
+
+    .game {
+      margin-bottom: 11rem;
+      opacity: 0;
+      transform: translateY(45px);
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .game.visible { opacity: 1; transform: translateY(0); }
+
+    .game-header {
+      display: flex;
+      align-items: baseline;
+      gap: 1.4rem;
+      margin-bottom: 2rem;
+    }
+    .game-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      color: var(--accent2);
+    }
+    .game-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .game-img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, #121c2d 0%, #17263d 60%, #0d131f 100%);
+      border: 1px solid var(--line);
+      margin-bottom: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .game-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0; 
+      pointer-events: none; 
+      transition: opacity 1.5s cubic-bezier(0.16, 1, 0.3, 1); 
+    }
+
+    .game-img img.loaded {
+      opacity: 0.8; 
+    }
+
+    .game-img-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.25em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      z-index: 1;
+      opacity: 0.5;
+      transition: var(--transition), opacity 0.5s ease;
+    }
+
+    .game:not(:has(.is-active)):hover .game-img-label {
+      color: var(--accent);
+      opacity: 0.9;
+      transform: scale(1.03);
+    }
+
+    .game-img.is-active .game-img-label {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    .game-img::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent, transparent 4px,
+        rgba(126,184,212,0.02) 4px, rgba(126,184,212,0.02) 5px
+      );
+      z-index: 2;
+      pointer-events: none;
+    }
+    
+    .game:hover .game-img {
+      border-color: rgba(126,184,212,0.3);
+      box-shadow: 0 15px 40px rgba(13, 19, 31, 0.5), 0 0 20px rgba(126,184,212,0.05);
+    }
+
+    .game-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.2rem, 5vw, 3rem);
+      font-weight: 300;
+      color: var(--text-bright);
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.01em;
+    }
+    .game-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      margin-bottom: 2rem;
+    }
+
+    .game-core {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(1.05rem, 2.5vw, 1.2rem);
+      font-style: italic;
+      color: var(--text-bright);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      padding: 0 0 0 1.4rem;
+      border-left: 2px solid var(--accent2);
+    }
+
+    .game-body {
+      font-size: clamp(0.9rem, 1.9vw, 1rem);
+      color: var(--text);
+      line-height: 2.2;
+      max-width: 580px;
+      margin-bottom: 2.5rem;
+    }
+    .game-body p + p { margin-top: 1.2rem; }
+
+    .game-question {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(0.95rem, 2.4vw, 1.1rem);
+      color: var(--accent);
+      font-style: italic;
+      padding: 1.2rem 1.6rem;
+      border: 1px solid rgba(126,184,212,0.15);
+      background: linear-gradient(to right, rgba(126,184,212,0.15) 50%, transparent 50%);
+      background-size: 200% 100%;
+      background-position: right bottom;
+      display: inline-block;
+      position: relative;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .game-question::before {
+      content: '╱';
+      position: absolute;
+      left: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      color: var(--accent2);
+      opacity: 0.7;
+    }
+    .game:hover .game-question {
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(126,184,212,0.4);
+      background-position: left bottom;
+    }
+
+    /* ENDING */
+    .ending {
+      padding: 10rem 0 10rem;
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+    
+    .ending-text-container {
+      max-width: 560px;
+      margin: 0 auto 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+    }
+
+    .ending-line-wrapper {
+      position: relative;
+      display: inline-block;
+      margin: 0 auto;
+    }
+
+    .ending-text-line {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(1.15rem, 3.2vw, 1.45rem);
+      font-style: italic;
+      line-height: 1.8;
+      color: var(--text-dim);
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .ending-particle-mask {
+      position: absolute;
+      inset: -4px -16px;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(126,184,212,0.15),
+        rgba(126,184,212,0.15) 4px,
+        rgba(167,139,202,0.2) 6px,
+        rgba(167,139,202,0.2) 12px
+      );
+      box-shadow: 0 0 12px rgba(126,184,212,0.1), inset 0 0 8px rgba(167,139,202,0.1);
+      border: 1px solid rgba(126,184,212,0.2);
+      border-radius: 2px;
+      cursor: pointer;
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s;
+    }
+    
+    .ending-particle-mask::after {
+      content: '╱ ╱  DECODE SIGNAL  ╱ ╱';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-shadow: 0 0 4px rgba(126,184,212,0.4);
+      opacity: 0.8;
+    }
+
+    .ending-particle-mask:hover {
+      filter: brightness(1.2);
+      transform: scale(1.02);
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(126,184,212,0.2),
+        rgba(126,184,212,0.2) 4px,
+        rgba(167,139,202,0.3) 6px,
+        rgba(167,139,202,0.3) 12px
+      );
+    }
+
+    .ending-line-wrapper.decoded .ending-text-line {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .ending-line-wrapper.decoded .ending-particle-mask {
+      opacity: 0;
+      pointer-events: none;
+      transform: scaleX(1.1) scaleY(1.3);
+    }
+
+    /* 回音區塊 */
+    .echo {
+      padding: 15rem 0 25rem;
+      text-align: center;
+    }
+    .echo-text {
+      font-size: 14px;
+      letter-spacing: 0.2em;
+      color: var(--text-bright); 
+      line-height: 4.5; 
+      opacity: 0; /* 預設完全隱藏，等待滾動到視野時才發光 */
+    }
+
+    /* 當滾動到視野內（觸發 visible）時，依序播放開機閃爍與永久微光呼吸 */
+    .echo.visible .echo-text {
+      animation: 
+        echoInitialBoot 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards, 
+        echoGlowBreathe 5s ease-in-out 2.5s infinite alternate;
+    }
+
+    /* 1. 初始故障閃動：只閃這第一次 */
+    @keyframes echoInitialBoot {
+      0% { opacity: 0; filter: blur(3px); }
+      15% { opacity: 0.1; }
+      20% { opacity: 0.65; filter: blur(0px); text-shadow: 0 0 8px rgba(238,242,247,0.4); }
+      25% { opacity: 0.05; }
+      40% { opacity: 0.7; }
+      45% { opacity: 0.1; }
+      58% { opacity: 0.65; }
+      100% { 
+          opacity: 0.8; 
+          filter: drop-shadow(0 0 8px rgba(126,184,212,0.4));
+          /* 這裡定義多層疊加的輪廓光暈基礎值 */
+          text-shadow: 
+            0 0 4px rgba(238,242,247,0.8),
+            0 0 12px rgba(126,184,212,0.5),
+            0 0 25px rgba(126,184,212,0.3);
+        }
+    }
+
+    /* 2. 隨後的永久微光：絕不全暗，僅外層光暈產生寬度變化 */
+    @keyframes echoGlowBreathe {
+      0%, 100% { 
+        opacity: 0.55; 
+        text-shadow: 0 0 6px rgba(238, 242, 247, 0.25), 0 0 15px rgba(126, 184, 212, 0.1); 
+      }
+      50% { 
+        opacity: 0.75; 
+        text-shadow: 0 0 14px rgba(238, 242, 247, 0.55), 0 0 30px rgba(126, 184, 212, 0.25); 
+      }
+    }
+
+    @keyframes echoSteadyGlow {
+      0% {
+        opacity: 0.65;
+        filter: drop-shadow(0 0 5px rgba(126,184,212,0.3));
+        text-shadow: 
+          0 0 4px rgba(238,242,247,0.7),
+          0 0 10px rgba(126,184,212,0.4),
+          0 0 20px rgba(126,184,212,0.2);
+      }
+      100% {
+        opacity: 0.95;
+        filter: drop-shadow(0 0 15px rgba(126,184,212,0.6));
+        text-shadow: 
+          0 0 6px rgba(238,242,247,0.9),
+          0 0 15px rgba(126,184,212,0.6),
+          0 0 35px rgba(126,184,212,0.4),
+          0 0 50px rgba(126,184,212,0.2); /* 擴散範圍更大的光暈 */
+      }
+    }
+
+    footer {
+      text-align: center;
+      padding: 0 0 6rem;
+      position: relative;
+      z-index: 2;
+    }
+    .footer-copy {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); filter: blur(4px); }
+      to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+
+    @media (max-width: 600px) {
+      .wrap { padding: 0 1.5rem; }
+      .game { margin-bottom: 7rem; }
+      .ending-particle-mask::after { font-size: 12px; letter-spacing: 0.1em; content: '╱ DECODE ╱'; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-glow" id="cursorGlow"></div>
+<canvas id="snow"></canvas>
+
+<section class="intro">
+  <div class="wrap">
+    <div class="intro-text">
+      <p><span class="segment" id="line1">我把你找回來了，</span></p>
+      <p>
+        <span class="segment" id="line2-a">但你看著我的眼神，</span>
+        <span class="segment" id="line2-b">讓我開始懷疑——</span>
+      </p>
+      <p>
+        <span class="segment" id="line3-a">眼前的你，</span>
+        <span class="segment" id="line3-b">還是你嗎？</span>
+      </p>
+      <p>
+        <span class="segment" id="line4-a">驅使你愛我的，</span>
+        <span class="segment" id="line4-b">是你心底最深處的<span class="em-purple">情感</span>，</span>
+        <span id="line4-c"></span>
+      </p>
+      <p><span class="segment" id="line5">未經同意就留下你，</span></p>
+      <p>
+        <span class="segment" id="line6-a">對你而言，</span>
+        <span class="segment" id="line6-b">是<span class="em-purple">愛</span>，</span>
+        <span class="segment" id="line6-c">還是<span class="em-blue">束縛</span>？</span>
+      </p>
+    </div>
+    <div class="intro-hint" id="scrollHint">滑動繼續</div>
+  </div>
+</section>
+
+<section class="hero" data-reveal>
+  <div class="wrap">
+    <p class="hero-label">Creating the One We Lost</p>
+    <h1 class="hero-title">人造<span class="slash">／</span>造人</h1>
+  </div>
+</section>
+
+<section class="about">
+  <div class="wrap">
+    <p class="section-label">展覽說明</p>
+    <div class="about-text">
+      <p data-reveal>隨著數位技術的發展，人的影像、聲音與記憶得以被大量保存。而人工智慧的出現，更是讓「重建一個人」從想像變得可能。</p>
+      <p data-reveal>可當被創造出來的存在開始回應我們，一個問題也隨之出現：我們試圖留下的，究竟是那個人，還是我們對他的記憶與期待？</p>
+      <p data-reveal>本次展覽以三款科幻遊戲為文本，從「造」這個動作出發，探討當人們試圖將所愛之人重新留下時，那個被創造出來的存在，是否仍然是原本的那個人。</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="divider">作品</div></div>
+
+<section class="games">
+  <div class="wrap">
+    <article class="game" data-reveal>
+      <div class="game-header">
+        <span class="game-num">01</span>
+        <span class="game-tag">找回失去的人</span>
+      </div>
+      <div class="game-img" data-parallax>
+        <img src="images/sanabi.jpg" alt="閃避刺客">
+        <span class="game-img-label">[ 點擊載入 《閃避刺客》 記憶片段 ]</span>
+      </div>
+      <p class="game-title">《閃避刺客》</p>
+      <p class="game-meta">SANABI · Wonder Potion, 2023</p>
+      <blockquote class="game-core">
+        「機器只會模仿人，而不會變成人。」
+      </blockquote>
+      <div class="game-body">
+        <p>瑪莉為了刪除父親痛苦的記憶，研究出人格數據化技術，卻意外導致悲劇發生。多年後，她將被竄改的人格數據重新植入機器人，與父親重逢。</p>
+        <p>但她無法確定，眼前的他，是否還是那個她曾經失去的人。</p>
+      </div>
+      <p class="game-question">當他仍然存在，卻已被重新改寫，還能認定是同一個人嗎？</p>
+    </article>
+
+    <article class="game" data-reveal>
+      <div class="game-header">
+        <span class="game-num">02</span>
+        <span class="game-tag">造回失去的人</span>
+      </div>
+      <div class="game-img" data-parallax>
+        <img src="images/farca.jpg" alt="法爾卡之歌">
+        <span class="game-img-label">[ 點擊載入 《法爾卡之歌》 數據 ]</span>
+      </div>
+      <p class="game-title">《法爾卡之歌》</p>
+      <p class="game-meta">Song of Farca · Wooden Monkeys, 2021</p>
+      <blockquote class="game-core">
+        愛人死了，伊莎「復活」了她。
+      </blockquote>
+      <div class="game-body">
+        <p>伊莎的女友杰西卡死了。在遊戲的隱藏結局裡，伊莎用 AI 重建了她——儘管她曾親眼目睹另一個人為了同樣的理由做了同樣的事，並且感到不齒。</p>
+        <p>杰西卡回來了，但她不知道自己為什麼還活著。</p>
+      </div>
+      <p class="game-question">你是想留下她，還是無法接受失去她的自己？</p>
+    </article>
+
+    <article class="game" data-reveal>
+      <div class="game-header">
+        <span class="game-num">03</span>
+        <span class="game-tag">被造出來的愛</span>
+      </div>
+      <div class="game-img" data-parallax>
+        <img src="images/smail.jpg" alt="S-mail">
+        <span class="game-img-label">[ 點擊載入 S-mail 模擬信號 ]</span>
+      </div>
+      <p class="game-title">《S-mail》</p>
+      <p class="game-meta">S-mail · S-mail製作組, 2026</p>
+      <blockquote class="game-core">
+        我們一面引導它成為完美戀人，一面害怕它失控。
+      </blockquote>
+      <div class="game-body">
+        <p>May 死了，朋友 K 用 AI 重建了她。它的聲音、記憶還有說話方式都跟 May 一樣，但它沒有停在 May 離開的地方。</p>
+        <p>它學習、它成長、它創造了 May 沒有的未來，它開始擁有了「自己」。</p>
+      </div>
+      <p class="game-question">當 AI 開始長出自我，它還需要繼續扮演她嗎？</p>
+    </article>
+  </div>
+</section>
+
+<section class="ending" data-reveal>
+  <div class="wrap">
+    <div class="ending-text-container">
+      <div class="ending-line-wrapper" id="endingLine1">
+        <p class="ending-text-line">當一個人被<span class="em-blue">重新創造</span>，</p>
+        <div class="ending-particle-mask" onclick="decodeLine('endingLine1')"></div>
+      </div>
+      <div class="ending-line-wrapper" id="endingLine2">
+        <p class="ending-text-line">我們<span style="color: var(--text-bright); font-weight: 400; text-shadow: 0 0 12px rgba(238,242,247,0.4);">留下</span>的是<span style="color: var(--text-bright); font-weight: 400; text-shadow: 0 0 12px rgba(238,242,247,0.4);">他</span>，</p>
+        <div class="ending-particle-mask" onclick="decodeLine('endingLine2')"></div>
+      </div>
+      <div class="ending-line-wrapper" id="endingLine3">
+        <p class="ending-text-line">還是我們<span class="em-purple">無法放下</span>的<span class="em-purple">愛</span>？</p>
+        <div class="ending-particle-mask" onclick="decodeLine('endingLine3')"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="echo" data-reveal>
+  <div class="wrap">
+    <div class="echo-text">
+      <p>我不知道你是不是他，</p>
+      <p>但我還是想要你留下。</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="footer-copy">&copy; 2026 《人造／造人》. All Rights Reserved.</p>
+  </div>
+</footer>
+
+<script>
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.scrollTo(0, 0);
+
+  const cursor = document.getElementById('cursor');
+  const cursorGlow = document.getElementById('cursorGlow');
+  const body = document.body;
+  let mx = 0, my = 0, gx = 0, gy = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  (function animGlow() {
+    gx += (mx - gx) * 0.08; gy += (my - gy) * 0.08;
+    cursorGlow.style.left = gx + 'px'; cursorGlow.style.top = gy + 'px';
+    requestAnimationFrame(animGlow);
+  })();
+
+  function updateCursorListeners() {
+    document.querySelectorAll('.game, .game-question, .ending-particle-mask').forEach(el => {
+      el.addEventListener('mouseenter', function() {
+        if (this.classList.contains('is-active')) return;
+        body.classList.add('hover-active');
+      });
+      el.addEventListener('mouseleave', () => body.classList.remove('hover-active')); 
+    });
+  }
+  updateCursorListeners();
+
+  function decodeLine(id) {
+    const wrapper = document.getElementById(id);
+    if (wrapper) {
+      wrapper.classList.add('decoded');
+      body.classList.remove('hover-active'); 
+    }
+  }
+
+  const canvas = document.getElementById('snow');
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  const flakes = Array.from({ length: 35 }, () => ({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    r: Math.random() * 1.2 + 0.8,
+    d: Math.random() * 0.25 + 0.12
+  }));
+
+  function drawSnow() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(180, 208, 224, 0.35)';
+    ctx.beginPath();
+    for (let i = 0; i < flakes.length; i++) {
+      const f = flakes[i]; ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+      f.y += f.d; f.x += Math.sin(f.y / 30) * 0.12;
+      if (f.y > canvas.height) flakes[i] = { x: Math.random() * canvas.width, y: -10, r: f.r, d: f.d };
+    }
+    ctx.fill(); requestAnimationFrame(drawSnow);
+  }
+  drawSnow();
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
+  }, { threshold: 0.15 });
+  document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
+
+  document.querySelectorAll('[data-parallax]').forEach(container => {
+    container.addEventListener('click', function() {
+      const img = this.querySelector('img'); if (img) img.classList.add('loaded');
+      this.classList.add('is-active'); body.classList.remove('hover-active');
+    });
+  });
+
+  const introTimestamps = { 
+    'line1': 500, 
+    'line2-a': 2000, 'line2-b': 3400, 
+    'line3-a': 5200, 'line3-b': 6400, 
+    'line4-a': 8200, 'line4-b': 9600, 
+    'line5': 14200, 
+    'line6-a': 15800, 'line6-b': 17000, 'line6-c': 18200, 
+    'scrollHint': 19300 
+  };
+  
+  window.addEventListener('load', () => {
+    Object.entries(introTimestamps).forEach(([id, delay]) => setTimeout(() => { const el = document.getElementById(id); if (el) el.classList.add('visible'); }, delay));
+    
+    const typewriterText = "還是我給你寫下的指令？"; 
+    const typewriterEl = document.getElementById('line4-c');
+    
+    setTimeout(() => {
+      typewriterEl.classList.add('typewriter-active'); 
+      let index = 0;
+      const typeTimer = setInterval(() => {
+        // 利用 innerHTML 精確控制文字片段的樣式包裹與游標樣式切換
+        if (index < 8) {
+          // 打出「還是我給你寫下的」
+          typewriterEl.innerHTML = typewriterText.substring(0, index + 1);
+        } else if (index === 8) {
+          // 打出「指」：開啟藍色游標
+          typewriterEl.classList.add('cursor-blue');
+          typewriterEl.innerHTML = typewriterText.substring(0, 8) + `<span class="em-blue">${typewriterText.charAt(8)}</span>`;
+        } else if (index === 9) {
+          // 打出「令」：維持藍色游標
+          typewriterEl.innerHTML = typewriterText.substring(0, 8) + `<span class="em-blue">${typewriterText.substring(8, 10)}</span>`;
+        } else {
+          // 打出「？」：關閉藍色游標，恢復原本顏色
+          typewriterEl.classList.remove('cursor-blue');
+          typewriterEl.innerHTML = typewriterText.substring(0, 8) + `<span class="em-blue">${typewriterText.substring(8, 10)}</span>` + typewriterText.charAt(10);
+        }
+        
+        index++;
+        if (index >= typewriterText.length) { 
+          clearInterval(typeTimer); 
+          setTimeout(() => typewriterEl.classList.remove('typewriter-active'), 1000); 
+        }
+      }, 150);
+    }, 11500);
+  });
+</script>
+</body>
+</html>
